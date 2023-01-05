@@ -30,6 +30,7 @@ public class admin extends javax.swing.JFrame {
         initComponents();
         Connect();
         load();
+        table_update();
     }
     Connection con;
     PreparedStatement pst;
@@ -57,7 +58,7 @@ public class admin extends javax.swing.JFrame {
     {
         int a;
         try {
-            pst = con.prepareStatement("select * from vendor");
+            pst = con.prepareStatement("select * from stocks");
             ResultSet rs = pst.executeQuery();
             
             ResultSetMetaData rd = rs.getMetaData();
@@ -219,15 +220,20 @@ public class admin extends javax.swing.JFrame {
 
             },
             new String [] {
-                "Serial Number", "Item Name", "Item Type", "Quantity", "Added by"
+                "ID", "Item Type", "Serial Number", "Item Name", "Quantity", "Added by"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.Object.class, java.lang.Object.class, java.lang.Integer.class, java.lang.Object.class, java.lang.Integer.class
+                java.lang.Object.class, java.lang.Object.class, java.lang.Object.class, java.lang.Integer.class, java.lang.Object.class, java.lang.Integer.class
             };
 
             public Class getColumnClass(int columnIndex) {
                 return types [columnIndex];
+            }
+        });
+        jTable1.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jTable1MouseClicked(evt);
             }
         });
         jScrollPane1.setViewportView(jTable1);
@@ -237,6 +243,7 @@ public class admin extends javax.swing.JFrame {
             jTable1.getColumnModel().getColumn(2).setResizable(false);
             jTable1.getColumnModel().getColumn(3).setResizable(false);
             jTable1.getColumnModel().getColumn(4).setResizable(false);
+            jTable1.getColumnModel().getColumn(5).setResizable(false);
         }
 
         jButton6.setText("Home");
@@ -307,38 +314,89 @@ public class admin extends javax.swing.JFrame {
         pack();
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
-
-    private void addActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addActionPerformed
+        Connection con1;
+        PreparedStatement insert;
         
-        try {
+        private void table_update()
+        {
+            int c; 
+              try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            con1 = DriverManager.getConnection("jdbc:mysql://localhost/stockmanagement","root","");
+            insert = con1.prepareStatement("select * from stocks");
+            ResultSet  rs = insert.executeQuery();
+            ResultSetMetaData Rss  = rs.getMetaData();
+            c = Rss.getColumnCount();
             
-            String type = txtType.getText();
-            String serial = txtSerial.getText();
-            String name = txtName.getText();
-            String quantity = txtQuantity.getText();
-            String addedBy = txtAddedBy.getText();
+            DefaultTableModel Df = (DefaultTableModel)jTable1.getModel();
+            Df.setRowCount(0);
             
+            while(rs.next())
+            {
+                Vector v2 = new Vector();
+                
+                for(int a = 1; a<=c; a ++)
+                {
+                    v2.add(rs.getString("id"));
+                    v2.add(rs.getString("type"));
+                    v2.add(rs.getString("serial"));
+                    v2.add(rs.getString("name"));
+                    v2.add(rs.getString("quantity"));
+                    v2.add(rs.getString("addedby"));
+                }
+                
+                Df.addRow(v2);
+            }
             
-            pst = con.prepareStatement("INSERT INTO `vendor`(`serial`, `name`, `type`, `quantity`, `addedby`) values(?,?,?,?,?)");
-            pst.setString(1, serial);
-            pst.setString(2, name);
-            pst.setString(3, type);
-            pst.setString(4, quantity);
-            pst.setString(5, addedBy);
-            pst.executeUpdate();
-            JOptionPane.showMessageDialog(this, "Item Added");
-            
-             txtType.setText("");
-             txtSerial.setText("");
-             txtName.setText("");
-             txtQuantity.setText("");
-             txtType.requestFocus();
-             load();
-            
-            
-        } catch (SQLException ex) {
+            txtType.setText("");
+            txtSerial.setText("");
+            txtName.setText("");
+            txtQuantity.setText("");
+            txtAddedBy.setText("");
+            txtType.requestFocus();
+        } catch (ClassNotFoundException ex) {
             Logger.getLogger(admin.class.getName()).log(Level.SEVERE, null, ex);
         }
+        catch (SQLException ex) {
+            Logger.getLogger(admin.class.getName()).log(Level.SEVERE, null, ex);
+        }
+            
+        }
+    private void addActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addActionPerformed
+        String type = txtType.getText();
+        String serial = txtSerial.getText();
+        String name = txtName.getText();
+        String quantity = txtQuantity.getText();
+        String addedby = txtAddedBy.getText();
+        
+        
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            con1 = DriverManager.getConnection("jdbc:mysql://localhost/stockmanagement","root","");
+            insert = con1.prepareStatement("insert into stocks(serial,name,type,quantity,addedby)values(?,?,?,?,?)");
+            insert.setString(1, serial);
+            insert.setString(2, name);
+            insert.setString(3, type);
+            insert.setString(4, quantity);
+            insert.setString(5, addedby);
+            insert.executeUpdate();
+            
+            JOptionPane.showMessageDialog(this, "Item Added");
+            table_update();
+            
+            txtType.setText("");
+            txtSerial.setText("");
+            txtName.setText("");
+            txtQuantity.setText("");
+            txtAddedBy.setText("");
+            txtType.requestFocus();
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(admin.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        catch (SQLException ex) {
+            Logger.getLogger(admin.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
     }//GEN-LAST:event_addActionPerformed
 
     private void jButton6ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton6ActionPerformed
@@ -350,17 +408,44 @@ public class admin extends javax.swing.JFrame {
 
     private void editActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_editActionPerformed
         
-        
-        df = (DefaultTableModel) jTable1.getModel(); 
-        int selected = jTable1.getSelectedRow();
-        
-        txtType.setText(df.getValueAt (selected,2).toString());
-        txtSerial.setText(df.getValueAt (selected, 0).toString());
-        txtName.setText(df.getValueAt (selected, 1).toString());
-        txtQuantity.setText(df.getValueAt (selected, 3).toString());
-        txtAddedBy.setText(df.getValueAt(selected, 4).toString());
-        add.setEnabled(false);
-
+        DefaultTableModel Df = (DefaultTableModel)jTable1.getModel();
+        int selectedIndex = jTable1.getSelectedRow();
+        try {
+            int id = Integer.parseInt(Df.getValueAt (selectedIndex, 0).toString());
+            String type = txtType.getText();
+            String serial = txtSerial.getText();
+            String name = txtName.getText();
+            String quantity = txtQuantity.getText();
+            String addedby = txtAddedBy.getText();
+            
+            Class.forName("com.mysql.cj.jdbc.Driver");
+            con1 = DriverManager.getConnection("jdbc:mysql://localhost/stockmanagement","root","");
+            insert = con1.prepareStatement("update stocks set serial=?,name =?,type=?,quantity=?,addedby=?");
+            insert.setString(1, serial);
+            insert.setString(2, name);
+            insert.setString(3, type);
+            insert.setString(4, quantity);
+            insert.setString(5, addedby);
+           
+            insert.executeUpdate();
+            
+            JOptionPane.showMessageDialog(this, "Item Updated");
+         
+            
+            txtType.setText("");
+            txtSerial.setText("");
+            txtName.setText("");
+            txtQuantity.setText("");
+            txtAddedBy.setText("");
+            table_update();
+            
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(admin.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        catch (SQLException ex) {
+            Logger.getLogger(admin.class.getName()).log(Level.SEVERE, null, ex);
+        }
+      
         
     }//GEN-LAST:event_editActionPerformed
 
@@ -380,7 +465,7 @@ public class admin extends javax.swing.JFrame {
             
         
            
-            pst = con.prepareStatement("delete from vendor where serial = ?");
+            pst = con.prepareStatement("delete from stocks where serial = ?");
            
             pst.setInt(1, serial);
             pst.executeUpdate();
@@ -414,39 +499,21 @@ public class admin extends javax.swing.JFrame {
 
     private void UpdateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_UpdateActionPerformed
 
-        try {
-            
-            String type = txtType.getText();
-            String serial = txtSerial.getText();
-            String name = txtName.getText();
-            String quantity = txtQuantity.getText();
-            String addedBy = txtAddedBy.getText();
-            
        
-           
-            pst = con.prepareStatement("update vendor set serial =?, name =?, type =?, quantity =? where addedby =?");
-            pst.setString(1, serial);
-            pst.setString(2, name);
-            pst.setString(3, type);
-            pst.setString(4, quantity);
-            pst.setString(5, addedBy);
-            pst.executeUpdate();
-            JOptionPane.showMessageDialog(this, "Item Updated");
-            
-             txtType.setText("");
-             txtSerial.setText("");
-             txtName.setText("");
-             txtQuantity.setText("");
-             txtType.requestFocus();
-             load();
-              add.setEnabled(true);
-            
-            
-        } catch (Exception ex) {
-            System.out.println(ex.getMessage());
-        }
         
     }//GEN-LAST:event_UpdateActionPerformed
+
+    private void jTable1MouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTable1MouseClicked
+        // TODO add your handling code here:
+        DefaultTableModel Df = (DefaultTableModel)jTable1.getModel();
+        int selectedIndex = jTable1.getSelectedRow();
+        txtType.setText(Df.getValueAt(selectedIndex, 1).toString());
+        txtSerial.setText(Df.getValueAt(selectedIndex, 2).toString());
+        txtName.setText(Df.getValueAt(selectedIndex, 3).toString());
+        txtQuantity.setText(Df.getValueAt(selectedIndex, 4).toString());
+        txtAddedBy.setText(Df.getValueAt(selectedIndex, 5).toString());
+        
+    }//GEN-LAST:event_jTable1MouseClicked
 
     /**
      * @param args the command line arguments
